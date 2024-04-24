@@ -39,8 +39,6 @@
 % You should have received a copy of the GNU General Public License
 % along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-%% REPLACE WITH PATH TO MEDA TOOLBOX
-addpath('MEDA\')
 
 %% SYNTHETIC DATA GENERATION
 reps = 4;
@@ -58,7 +56,8 @@ for i = 1:length(levels{1})
     X(find(F(:,1) == levels{1}(i)),:) = simuleMV(length(find(F(:,1) == levels{1}(i))),vars,8) + repmat(randn(1,vars),length(find(F(:,1) == levels{1}(i))),1); %#ok
 end
 
-[~,parglmo] = parglm(X,F,{[1,2]});
+perm = 1e3;
+[~,parglmo] = parglm(X,F,{[1,2]},2,perm);
 
 true_p = parglmo.p;
 
@@ -74,9 +73,9 @@ for ii = 1:length(lvls)
         idx = randperm(numel(X),round(numel(X)*lvls(ii)/100)); 
         X2(idx) = nan;
 
-        [~, parglmo_grand] = parglm_grand(X2, F, [1,2],2,10000);
-        [~, parglmo_cell] = parglm_cell(X2, F, [1,2],2,10000);
-        [~, parglmo_cell2] = parglm_cell2(X2, F, [1,2],2,10000);
+        [~, parglmo_grand] = parglm_grand(X2, F, [1,2],2,perm);
+        [~, parglmo_cell] = parglm_cell(X2, F, [1,2],2,perm);
+        [~, parglmo_cell2] = parglm_cell2(X2, F, [1,2],2,perm);
 
         results(jj,ii,1) = sum((parglmo_grand.p - parglmo.p)./parglmo.p);
         results(jj,ii,2) = sum((parglmo_cell.p - parglmo.p)./parglmo.p); 
@@ -95,7 +94,7 @@ sds = squeeze(std(results,0,1));
 
 plot(lvls,mns(:,1),':','LineWidth',2); hold on;
 plot(lvls,mns(:,2),'--','LineWidth',2);
-plot(lvls,mns(:,3),'.-',LineWidth=2);
+plot(lvls,mns(:,3),'.-','LineWidth',2);
 
 e = errorbar(lvls,mns(:,1),sds(:,1),'LineStyle','none');
 e.Color = [0 0.4470 0.7410];
@@ -104,7 +103,8 @@ e.Color = [0.8500 0.3250 0.0980];
 e = errorbar(lvls,mns(:,3),sds(:,3),'LineStyle','none');
 e.Color = [0.9290 0.6940 0.1250];
 
-yline(0, 'LineWidth',1.5, alpha=0.75); hold off;
+%yline(0, 'LineWidth',1.5, 'alpha', 0.75); hold off;
+plot(lvls,zeros(size(lvls)), 'k:', 'LineWidth',1.5); hold off;
 
 title('Imputation methods, with interaction','FontSize',12)
 ylabel('ERROR')
