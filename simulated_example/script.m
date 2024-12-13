@@ -35,14 +35,14 @@ reps = 4;
 vars = 400;
 levels = {[1,2,3,4],[1,2,3]};
 
-F = create_design(levels,'Replicates',reps);
+F = create_design(levels,reps);
 
 X = zeros(size(F,1),vars);
 for i = 1:length(levels{1})
     X(find(F(:,1) == levels{1}(i)),:) = simuleMV(length(find(F(:,1) == levels{1}(i))),vars,8) + repmat(randn(1,vars),length(find(F(:,1) == levels{1}(i))),1);
 end
 
-T = parglm(X, F, [], 0);
+T = parglm(X, F, 'linear', 0,[],[],[],[],[],[1,2]);
 
 
 %% Create +5% missing elements and compute SS
