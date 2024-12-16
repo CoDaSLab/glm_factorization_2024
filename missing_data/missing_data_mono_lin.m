@@ -1,27 +1,25 @@
-%% Simulation of missing data with a modelled interaction term.
+%% Simulation of missing data
 %
 % This script utilises a method for simulating data with significant terms
-% as per Camacho et al. Camacho, José,
+% as per Camacho et al. Camacho, Jose,
 % et al. 'Least-squares approximation of a space distribution for a given
 % covariance and latent sub-space.' Chemometrics and Intelligent Laboratory
 % Systems 105.2 (2011): 171-180.
 %
-% DEPENDENCIES: MEDA Toolbox v1.4 from
-% https://github.com/josecamachop/MEDA-Toolbox/tree/v1.4
+% DEPENDENCIES: MEDA Toolbox v1.3 from
+% https://github.com/josecamachop/MEDA-Toolbox/tree/v1.3
 %
 % The data is simulated according to an n x m matrix of observations and
-% features as:
-% X = A + E
-% where E is the error term, which is in this case randomly generated. The
-% data is modelled according to:
-% X = A + B + AB
-% where B is a second linear term in an ANOVA-like model, and AB is the
-% interacting term. The effect of missing values, and the different methods
-% for missing value imputation relative to the true p values is measured in
-% this script. 
+% features as: X = A + E 
+% where E is the error term, which is in this case
+% randomly generated. The data is modelled according to: 
+% X = A + B 
+% where B is a second linear term in an ANOVA-like model, The effect of missing
+% values, and the different methods for missing value imputation relative
+% to the true p values is measured in this script. 
 %
 % coded by: Michael Sorochan Armstrong (mdarmstr@go.ugr.es) with input from
-% José Camacho
+% Jose Camacho
 % last modification: 17-04-2023
 %
 % Copyright (C) 2023  Universidad de Granada
