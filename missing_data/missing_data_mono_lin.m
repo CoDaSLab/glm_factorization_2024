@@ -39,111 +39,302 @@
 
 
 %% SYNTHETIC DATA GENERATION
+close all; clear all; %#ok
+
+% Useful parameters
+colors = lines(3);
 R = 10;
-lvls = [0,1,5,10,15,20,35];
+perm = 1e3;
 labels = {'UMR','CMR','pCMR'};
-
-reps = 4;
+reps = 8;
 vars = 400;
-levels = {[1,2,3,4],[1,2,3]};
+levels = {[1,2,3,4],[1,2,3]}; % First factor (groups), second factor (time points)
 
-F = create_design(levels,reps);
+% Create the design matrix
+F = create_design(levels, reps);
 
-X = zeros(size(F,1),vars);
+% Initialize data matrix
+X_original = zeros(size(F,1), vars);
+
+% Simulate data for each group in the first factor
 for i = 1:length(levels{1})
-    X(find(F(:,1) == levels{1}(i)),:) = simuleMV(length(find(F(:,1) == levels{1}(i))),vars,8) + repmat(randn(1,vars),length(find(F(:,1) == levels{1}(i))),1); %#ok
+    idx = find(F(:,1) == levels{1}(i));
+    X_original(idx,:) = simuleMV(length(idx), vars, 8) + repmat(randn(1, vars), length(idx), 1);
 end
 
-perm = 1e3;
-[T,parglmo] = parglm(X, F, [],2,perm);
+%Nominal p values
+[~,parglmo_lin] = parglm(X_original, F, [], 2, perm);
+[~,parglmo_int] = parglm(X_original, F, [1,2], 2, perm);
 
-true_p = parglmo.p;
+% Define missingness levels
+missingness_levels = [0, 1, 5, 10, 15, 20];
 
-results = zeros(reps,length(lvls),3);
+num_entries = numel(X_original);
 
-X_size = size(X);
+% Loop over missingness levels
+for ii = 1:length(missingness_levels)
+    % Copy the original data matrix for this level of missingness
+    X = X_original;
 
-row_indices_f2_lvl2 = find(all(F(:,2) == 2,2)); %only for the selection in f_2
-row_indices_f2_lvl3 = find(all(F(:,2) == 3,3));
-all_columns = 1:X_size(2);
-[rowsl2,colsl2] = ndgrid(row_indices_f2_lvl2,all_columns);
-[rowsl3,colsl3] = ndgrid(row_indices_f2_lvl3,all_columns);
+    % Calculate the percentage of patients to drop out based on the missingness level
+    num_patients = size(F, 1) / length(levels{2}); % Number of unique patients
+    % Calculate number of patients that will drop out - at least one for 1% missingness
+    num_dropout_patients = ceil((missingness_levels(ii) / 100) * num_patients); 
 
-idxl2 = sub2ind(X_size,rowsl2,colsl2);
-idxl3 = sub2ind(X_size,rowsl3,colsl3);
+    % Select random patients for dropout
+    dropout_patients = randperm(num_patients, num_dropout_patients);
 
-num_entries = numel(X);
+    % Introduce monotonic missing data for selected dropout patients
+    for p = dropout_patients
+        % Find rows corresponding to the selected patient
+        patient_rows = find(F(:,1) == ceil(p / reps)); % Find patient rows (based on design matrix)
 
-%% ITERATIVELY REMOVE ZEROS, CALCULATE P VALUES
-for ii = 1:length(lvls)
+        % Randomly select a time point for dropout - either 2 or 3. Patient
+        % must be observed at least once for this to make sense.
+        dropout_time = randi([2, length(levels{2})]);
 
+        % Introduce missingness starting from the dropout time point onward
+        for t = dropout_time:length(levels{2})
+            time_idx = find(F(:,2) == levels{2}(t)); % Find rows for the time point
+            patient_time_rows = intersect(patient_rows, time_idx); % Get specific rows for the patient at this time point
+            
+            % Calculate the subset of `patient_time_rows` to drop out
+            % Drop out a percentage of rows within the patient_time_rows
+            num_missing_rows = min(ceil(missingness_levels(ii) * length(patient_time_rows)), length(patient_time_rows)); % Cap to available rows
+            if num_missing_rows > 0
+                missing_rows = randsample(patient_time_rows, num_missing_rows); % Random subset
+                % Set the selected rows to NaN
+                X(missing_rows, :) = NaN;
+            end
+        end
+    end
     for jj = 1:R
 
         X2 = X;
-        rng('shuffle');
-        idx2 = randperm(numel(idxl2),round(numel(idxl2)*lvls(ii)*0.5/100)); 
-        idx3 = randperm(numel(idxl3),round(numel(idxl3)*lvls(ii)/100));
-        
-        X2(idx2) = nan; X2(idx3) = nan;
 
-        [~, parglmo_grand] = parglm_grand(X2, F, [],2,perm);
-        [~, parglmo_cell] = parglm_cell(X2, F, [],2,perm);
-        [~, parglmo_cell2] = parglm_cell2(X2, F, [],2,perm);
+        [~, parglmo_grand_lin] = parglm_grand(X2, F, [],2,perm);
+        [~, parglmo_cell_lin] = parglm_cell(X2, F, [],2,perm);
+        [~, parglmo_cell2_lin] = parglm_cell2(X2, F, [],2,perm);
 
-        results(jj,ii,1) = sum((parglmo_grand.p - parglmo.p)./parglmo.p);
-        results(jj,ii,2) = sum((parglmo_cell.p - parglmo.p)./parglmo.p); 
-        results(jj,ii,3) = sum((parglmo_cell2.p - parglmo.p)./parglmo.p); 
-        
+        [~, parglmo_grand_int] = parglm_grand(X2, F, [1,2],2,perm);
+        [~, parglmo_cell_int] = parglm_cell(X2, F, [1,2],2,perm);
+        [~, parglmo_cell2_int] = parglm_cell2(X2, F, [1,2],2,perm);
+
+        results_lin(jj,ii,1,:) = (parglmo_grand_lin.p - parglmo_lin.p)./parglmo_lin.p;
+        results_lin(jj,ii,2,:) = (parglmo_cell_lin.p - parglmo_lin.p)./parglmo_lin.p;
+        results_lin(jj,ii,3,:) = (parglmo_cell2_lin.p - parglmo_lin.p)./parglmo_lin.p;
+
+        results_int(jj,ii,1,:) = (parglmo_grand_int.p - parglmo_int.p)./parglmo_int.p;
+        results_int(jj,ii,2,:) = (parglmo_cell_int.p - parglmo_int.p)./parglmo_int.p;
+        results_int(jj,ii,3,:) = (parglmo_cell2_int.p - parglmo_int.p)./parglmo_int.p;
+
         lvls_actual(jj,ii) = (sum(isnan(X2),'all')/num_entries)*100;
 
-    fprintf('Replicate %d of %d complete \n',jj, R)
+        fprintf('Replicate %d of %d complete \n',jj, R)
     end
 
-fprintf('Replicates for lvl %d are complete \n', ii)
+    fprintf('Replicates for lvl %d are complete \n', ii)
 
+    % Save or analyze the data matrix `X` for this missingness level
+    fprintf('Missingness level: %d%% completed.\n', missingness_levels(ii));
+
+    % Optionally save the dataset for further analysis
+    %save(sprintf('X_missingness_%d.mat', miss_level), 'X', 'F');
 end
 
-%% PLOT RESULTS
-% Calculate mean and standard deviation along the second mode
-mns = squeeze(mean(results, 2)); % Mean along replicates
-sds = squeeze(std(results, 0, 2)); % Standard deviation along replicates
 
-% Colors for scatter plots (adjust or add more as needed)
-colors = lines(size(mns, 2)); % Generates a colormap for unique colors
+%% ITERATIVELY REMOVE ZEROS, CALCULATE P VALUES
+% for ii = 1:length(lvls)
+% 
+%     for jj = 1:R
+% 
+%         X2 = X;
+%         rng('shuffle');
+%         idx2 = randperm(numel(idxl2),round(numel(idxl2)*lvls(ii)*0.5/100)); 
+%         idx3 = randperm(numel(idxl3),round(numel(idxl3)*lvls(ii)/100));
+% 
+%         X2(idx2) = nan; X2(idx3) = nan;
+% 
+%         [~, parglmo_grand] = parglm_grand(X2, F, [],2,perm);
+%         [~, parglmo_cell] = parglm_cell(X2, F, [],2,perm);
+%         [~, parglmo_cell2] = parglm_cell2(X2, F, [],2,perm);
+% 
+%         results(jj,ii,1,:) = (parglmo_grand.p - parglmo.p)./parglmo.p;
+%         results(jj,ii,2,:) = (parglmo_cell.p - parglmo.p)./parglmo.p; 
+%         results(jj,ii,3,:) = (parglmo_cell2.p - parglmo.p)./parglmo.p; 
+% 
+%         lvls_actual(jj,ii) = (sum(isnan(X2),'all')/num_entries)*100;
+% 
+%     fprintf('Replicate %d of %d complete \n',jj, R)
+%     end
+% 
+% fprintf('Replicates for lvl %d are complete \n', ii)
+% 
+% end
 
-% Scatter plot results for each method in the 3rd mode
-figure;
+subplot(3,2,1)
 hold on;
-    % Scatter plot for mean values
-sc1 =    scatter(lvls_actual, results(:,:,1), 100, 'MarkerFaceColor', colors(1, :), ...
-        'MarkerEdgeColor', colors(1, :),...
-        'MarkerFaceAlpha',0.5,'MarkerEdgeAlpha',0.5);
+sc1 = scatter(lvls_actual,results_lin(:,:,1,1),50,'MarkerFaceColor', colors(1, :), ...
+    'MarkerEdgeColor', colors(1, :), ...
+    'MarkerFaceAlpha', 0.5, 'MarkerEdgeAlpha', 0.5, 'DisplayName', 'Method 1');
+sc2 = scatter(lvls_actual,results_lin(:,:,2,1),50,'MarkerFaceColor', colors(2, :), ...
+    'MarkerEdgeColor', colors(2, :), ...
+    'MarkerFaceAlpha', 0.5, 'MarkerEdgeAlpha', 0.5, 'DisplayName', 'Method 1');
+sc3 = scatter(lvls_actual,results_lin(:,:,3,1),50,'MarkerFaceColor', colors(3, :), ...
+    'MarkerEdgeColor', colors(3, :), ...
+    'MarkerFaceAlpha', 0.5, 'MarkerEdgeAlpha', 0.5, 'DisplayName', 'Method 1');
+hold off;
 
-sc2 =    scatter(lvls_actual, results(:,:,2), 100, 'MarkerFaceColor', colors(2, :), ...
-        'MarkerEdgeColor', colors(2, :), ...
-        'MarkerFaceAlpha',0.5,'MarkerEdgeAlpha',0.5);
+%h = [sc1(1);sc2(1);sc3(1)];
+%legend(h,labels,'Location','southwest')
+subtitle('2 Factor Model - A (significant)')
+ylabel('ERROR');
+xlabel('% Missing Data');
 
-sc3 =    scatter(lvls_actual, results(:,:,3), 100, 'MarkerFaceColor', colors(3, :), ...
-        'MarkerEdgeColor', colors(3, :),...
-        'MarkerFaceAlpha',0.5,'MarkerEdgeAlpha',0.5);
+subplot(3,2,3)
+hold on;
+sc1 = scatter(lvls_actual,results_lin(:,:,1,2),50,'MarkerFaceColor', colors(1, :), ...
+    'MarkerEdgeColor', colors(1, :), ...
+    'MarkerFaceAlpha', 0.5, 'MarkerEdgeAlpha', 0.5, 'DisplayName', 'Method 1');
+sc2 = scatter(lvls_actual,results_lin(:,:,2,2),50,'MarkerFaceColor', colors(2, :), ...
+    'MarkerEdgeColor', colors(2, :), ...
+    'MarkerFaceAlpha', 0.5, 'MarkerEdgeAlpha', 0.5, 'DisplayName', 'Method 1');
+sc3 = scatter(lvls_actual,results_lin(:,:,3,2),50,'MarkerFaceColor', colors(3, :), ...
+    'MarkerEdgeColor', colors(3, :), ...
+    'MarkerFaceAlpha', 0.5, 'MarkerEdgeAlpha', 0.5, 'DisplayName', 'Method 1');
+hold off;
+
+%h = [sc1(1);sc2(1);sc3(1)];
+%legend(h,labels,'Location','southwest')
+subtitle('2 Factor Model - B (not significant)')
+ylabel('ERROR');
+xlabel('% Missing Data');
+
+sgtitle('Imputation Methods, No Interaction', 'FontSize', 14);
+
+% Save figures
+savefig('resultslin_mono.fig');
+fig = gcf;
+saveas(fig, 'resultslin_mono.png');
+
+
+% %% WITH INTERACTION MODELLED
+% [T,parglmo] = parglm(X, F, [1,2], 2, perm);
+% 
+% true_p = parglmo.p;
+% 
+% results = zeros(reps,length(lvls),3,length(true_p));
+% 
+% X_size = size(X);
+% 
+% row_indices_f2_lvl2 = find(all(F(:,2) == 2,2)); %only for the selection in f_2
+% row_indices_f2_lvl3 = find(all(F(:,2) == 3,3));
+% all_columns = 1:X_size(2);
+% [rowsl2,colsl2] = ndgrid(row_indices_f2_lvl2,all_columns);
+% [rowsl3,colsl3] = ndgrid(row_indices_f2_lvl3,all_columns);
+% 
+% idxl2 = sub2ind(X_size,rowsl2,colsl2);
+% idxl3 = sub2ind(X_size,rowsl3,colsl3);
+% 
+% num_entries = numel(X);
+% 
+% %% ITERATIVELY REMOVE ZEROS, CALCULATE P VALUES
+% for ii = 1:length(lvls)
+% 
+%     for jj = 1:R
+% 
+%         X2 = X;
+%         rng('shuffle');
+%         idx2 = randperm(numel(idxl2),round(numel(idxl2)*lvls(ii)*0.5/100)); 
+%         idx3 = randperm(numel(idxl3),round(numel(idxl3)*lvls(ii)/100));
+% 
+%         X2(idx2) = nan; X2(idx3) = nan;
+% 
+%         [~, parglmo_grand] = parglm_grand(X2, F, [1,2],2,perm);
+%         [~, parglmo_cell] = parglm_cell(X2, F, [1,2],2,perm);
+%         [~, parglmo_cell2] = parglm_cell2(X2, F, [1,2],2,perm);
+% 
+%         results(jj,ii,1,:) = (parglmo_grand.p - parglmo.p)./parglmo.p;
+%         results(jj,ii,2,:) = (parglmo_cell.p - parglmo.p)./parglmo.p; 
+%         results(jj,ii,3,:) = (parglmo_cell2.p - parglmo.p)./parglmo.p; 
+% 
+%         lvls_actual(jj,ii) = (sum(isnan(X2),'all')/num_entries)*100;
+% 
+%     fprintf('Replicate %d of %d complete \n',jj, R)
+%     end
+% 
+% fprintf('Replicates for lvl %d are complete \n', ii)
+% 
+% end
+% 
+subplot(3,2,2)
+hold on;
+sc1 = scatter(lvls_actual,results_int(:,:,1,1),50,'MarkerFaceColor', colors(1, :), ...
+    'MarkerEdgeColor', colors(1, :), ...
+    'MarkerFaceAlpha', 0.5, 'MarkerEdgeAlpha', 0.5, 'DisplayName', 'Method 1');
+sc2 = scatter(lvls_actual,results_int(:,:,2,1),50,'MarkerFaceColor', colors(2, :), ...
+    'MarkerEdgeColor', colors(2, :), ...
+    'MarkerFaceAlpha', 0.5, 'MarkerEdgeAlpha', 0.5, 'DisplayName', 'Method 1');
+sc3 = scatter(lvls_actual,results_int(:,:,3,1),50,'MarkerFaceColor', colors(3, :), ...
+    'MarkerEdgeColor', colors(3, :), ...
+    'MarkerFaceAlpha', 0.5, 'MarkerEdgeAlpha', 0.5, 'DisplayName', 'Method 1');
+hold off;
+
+%h = [sc1(1);sc2(1);sc3(1)];
+%legend(h,labels,'Location','southwest')
+subtitle('2 Factor Model - A (significant)')
+ylabel('ERROR');
+xlabel('% Missing Data');
+
+subplot(3,2,4)
+hold on;
+sc1 = scatter(lvls_actual,results_int(:,:,1,2),50,'MarkerFaceColor', colors(1, :), ...
+    'MarkerEdgeColor', colors(1, :), ...
+    'MarkerFaceAlpha', 0.5, 'MarkerEdgeAlpha', 0.5, 'DisplayName', 'Method 1');
+sc2 = scatter(lvls_actual,results_int(:,:,2,2),50,'MarkerFaceColor', colors(2, :), ...
+    'MarkerEdgeColor', colors(2, :), ...
+    'MarkerFaceAlpha', 0.5, 'MarkerEdgeAlpha', 0.5, 'DisplayName', 'Method 1');
+sc3 = scatter(lvls_actual,results_int(:,:,3,2),50,'MarkerFaceColor', colors(3, :), ...
+    'MarkerEdgeColor', colors(3, :), ...
+    'MarkerFaceAlpha', 0.5, 'MarkerEdgeAlpha', 0.5, 'DisplayName', 'Method 1');
+hold off;
+
+% h = [sc1(1);sc2(1);sc3(1)];
+% legend(h,labels,'Location','southwest')
+subtitle('2 Factor Model - B (not significant)')
+ylabel('ERROR');
+xlabel('% Missing Data');
+
+subplot(3,2,6)
+hold on;
+sc1 = scatter(lvls_actual,results_int(:,:,1,3),50,'MarkerFaceColor', colors(1, :), ...
+    'MarkerEdgeColor', colors(1, :), ...
+    'MarkerFaceAlpha', 0.5, 'MarkerEdgeAlpha', 0.5, 'DisplayName', 'Method 1');
+sc2 = scatter(lvls_actual,results_int(:,:,2,3),50,'MarkerFaceColor', colors(2, :), ...
+    'MarkerEdgeColor', colors(2, :), ...
+    'MarkerFaceAlpha', 0.5, 'MarkerEdgeAlpha', 0.5, 'DisplayName', 'Method 1');
+sc3 = scatter(lvls_actual,results_int(:,:,3,3),50,'MarkerFaceColor', colors(3, :), ...
+    'MarkerEdgeColor', colors(3, :), ...
+    'MarkerFaceAlpha', 0.5, 'MarkerEdgeAlpha', 0.5, 'DisplayName', 'Method 1');
+hold off;
 
 h = [sc1(1);sc2(1);sc3(1)];
 
-
-% Zero-line
-plot(lvls_actual, zeros(size(lvls_actual)), 'k:', 'LineWidth', 1.5);
-
-% Labels and title
-title('Imputation Methods, no Interaction', 'FontSize', 12);
+lgd = legend(h,labels);
+set(lgd, 'Position', [0.2, 0.1, 0.2, 0.2]); % Adjust this for precise centering
+subtitle('2 Factor Model - AB (not significant)')
 ylabel('ERROR');
 xlabel('% Missing Data');
-legend(h,labels,'Location','southwest')
-% Save figures
-savefig('resultsint_mar.fig');
-fig = gcf;
-saveas(fig, 'resultsint_mar.png');
 
-hold off;
+
+% Save figures
+savefig('resultsint_mono.fig');
+fig = gcf;
+saveas(fig, 'resultsint_mono.png');
+
+
+
+
 
 
 
