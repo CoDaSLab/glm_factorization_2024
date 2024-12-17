@@ -48,7 +48,7 @@ colors = lines(3);
 R = 10;
 perm = 1e3;
 labels = {'UMR','CMR','pCMR'};
-reps = 8;
+reps = 20;
 vars = 400;
 levels = {[1,2,3,4],[1,2,3]}; % First factor (groups), second factor (time points)
 
@@ -80,29 +80,36 @@ for ii = 1:length(missingness_levels)
 
     % Calculate the percentage of patients to drop out based on the missingness level
     num_patients = size(F, 1) / length(levels{2}); % Number of unique patients
-    % Calculate number patients that will drop out - at least one for 1% missingness
+    % Calculate number of patients that will drop out - at least one for 1% missingness
     num_dropout_patients = ceil((missingness_levels(ii) / 100) * num_patients); 
 
     % Select random patients for dropout
-    dropout_patients = randperm(num_patients, num_dropout_patients); %problem related to PROBLEM?
+    dropout_patients = randperm(num_patients, num_dropout_patients);
 
     % Introduce monotonic missing data for selected dropout patients
     for p = dropout_patients
         % Find rows corresponding to the selected patient
-        patient_rows = find(F(:,1) == ceil(p / reps)); % Find patient rows (based on design matrix) PROBLEM?
+        patient_rows = find(F(:,1) == ceil(p / reps)); % Find patient rows (based on design matrix)
 
         % Randomly select a time point for dropout - either 2 or 3. Patient
-        % must be observed at least once for this to make sense. 
-        dropout_time = randi([2,length(levels{2})]);
-        
-        % Set values to NaN from the dropout time point onward
+        % must be observed at least once for this to make sense.
+        dropout_time = 3; %randi([2, length(levels{2})]);
+
+        % Introduce missingness starting from the dropout time point onward
         for t = dropout_time:length(levels{2})
             time_idx = find(F(:,2) == levels{2}(t)); % Find rows for the time point
-            patient_time_rows = intersect(patient_rows, time_idx); % Get specific rows
-            X(patient_time_rows, :) = NaN; % Introduce missing values
+            patient_time_rows = intersect(patient_rows, time_idx); % Get specific rows for the patient at this time point
+            
+            % Calculate the subset of `patient_time_rows` to drop out
+            % Drop out a percentage of rows within the patient_time_rows
+            num_missing_rows = min(ceil((missingness_levels(ii)/100) * length(patient_time_rows)), length(patient_time_rows)); % Cap to available rows
+            if num_missing_rows > 0
+                missing_rows = randsample(patient_time_rows, num_missing_rows); % Random subset
+                % Set the selected rows to NaN
+                X(missing_rows, :) = NaN;
+            end
         end
     end
-
     for jj = 1:R
 
         X2 = X;
@@ -139,33 +146,41 @@ end
 
 
 %% ITERATIVELY REMOVE ZEROS, CALCULATE P VALUES
-% for ii = 1:length(lvls)
-% 
-%     for jj = 1:R
-% 
-%         X2 = X;
-%         rng('shuffle');
-%         idx2 = randperm(numel(idxl2),round(numel(idxl2)*lvls(ii)*0.5/100)); 
-%         idx3 = randperm(numel(idxl3),round(numel(idxl3)*lvls(ii)/100));
-% 
-%         X2(idx2) = nan; X2(idx3) = nan;
-% 
-%         [~, parglmo_grand] = parglm_grand(X2, F, [],2,perm);
-%         [~, parglmo_cell] = parglm_cell(X2, F, [],2,perm);
-%         [~, parglmo_cell2] = parglm_cell2(X2, F, [],2,perm);
-% 
-%         results(jj,ii,1,:) = (parglmo_grand.p - parglmo.p)./parglmo.p;
-%         results(jj,ii,2,:) = (parglmo_cell.p - parglmo.p)./parglmo.p; 
-%         results(jj,ii,3,:) = (parglmo_cell2.p - parglmo.p)./parglmo.p; 
-% 
-%         lvls_actual(jj,ii) = (sum(isnan(X2),'all')/num_entries)*100;
-% 
-%     fprintf('Replicate %d of %d complete \n',jj, R)
-%     end
-% 
-% fprintf('Replicates for lvl %d are complete \n', ii)
-% 
-% end
+for ii = 1:length(lvls)
+
+    for jj = 1:R
+
+        X2 = X;
+        rng('shuffle');
+        idx2 = randperm(numel(idxl2),round(numel(idxl2)*lvls(ii)*0.5/100)); 
+        idx3 = randperm(numel(idxl3),round(numel(idxl3)*lvls(ii)/100));
+
+        X2(idx2) = nan; X2(idx3) = nan;
+
+        [~, parglmo_grand_lin] = parglm_grand(X2, F, [],2,perm);
+        [~, parglmo_cell_lin] = parglm_cell(X2, F, [],2,perm);
+        [~, parglmo_cell2_lin] = parglm_cell2(X2, F, [],2,perm);
+
+        [~, parglmo_grand_int] = parglm_grand(X2, F, [],2,perm);
+        [~, parglmo_cell_int] = parglm_cell(X2, F, [],2,perm);
+        [~, parglmo_cell2_int] = parglm_cell2(X2, F, [],2,perm);
+
+        results_lin(jj,ii,1,:) = (parglmo_grand_lin.p - parglmo_lin.p)./parglmo_lin.p;
+        results_lin(jj,ii,2,:) = (parglmo_cell_lin.p - parglmo_lin.p)./parglmo_lin.p; 
+        results_lin(jj,ii,3,:) = (parglmo_cell2_lin.p - parglmo_lin.p)./parglmo_lin.p;
+
+        results_int(jj,ii,1,:) = (parglmo_grand_lin.p - parglmo_lin.p)./parglmo_lin.p;
+        results_lin(jj,ii,2,:) = (parglmo_cell_lin.p - parglmo_lin.p)./parglmo_lin.p; 
+        results_lin(jj,ii,3,:) = (parglmo_cell2_lin.p - parglmo_lin.p)./parglmo_lin.p; 
+
+        lvls_actual(jj,ii) = (sum(isnan(X2),'all')/num_entries)*100;
+
+    fprintf('Replicate %d of %d complete \n',jj, R)
+    end
+
+fprintf('Replicates for lvl %d are complete \n', ii)
+
+end
 
 subplot(3,2,1)
 hold on;
@@ -205,7 +220,7 @@ subtitle('2 Factor Model - B (not significant)')
 ylabel('ERROR');
 xlabel('% Missing Data');
 
-sgtitle('Imputation Methods, No Interaction', 'FontSize', 14);
+sgtitle('Imputation Methods, Monotonic Missingness', 'FontSize', 14);
 
 % Save figures
 savefig('resultslin_mono.fig');
