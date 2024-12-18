@@ -2,6 +2,9 @@
 
 *Oliver Polushkina Merchanskaya, Michael D. Sorochan Armstrong, Carolina Gómez Llorente, Patricia Ferrer, Sergi Fernandez-Gonzalez, Miriam Perez-Cruz, María Dolores Gómez-Roig, José Camacho*
 
+This repository requires the MEDA toolbox v1.3 at https://github.com/codaslab/MEDA-Toolbox
+
+
 ## missing_data
 
 Code related to the simulations for missing data, in Section 4 of the paper. As a function of an increasing percentage of missing data, a comparison between unconditional mean replacement (UMR) conditional mean replacement (CMR) and permutational conditional mean replacement are considered using random data with and without a simulated interacting term.
