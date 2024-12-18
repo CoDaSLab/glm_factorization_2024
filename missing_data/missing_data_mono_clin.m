@@ -87,26 +87,24 @@ for ii = 1:length(missingness_levels)
     dropout_patients = randperm(num_patients, num_dropout_patients);
 
     % Introduce monotonic missing data for selected dropout patients
-    for p = dropout_patients
+    for jj = dropout_patients
         % Find rows corresponding to the selected patient
-        patient_rows = find(F(:,1) == ceil(p / reps)); % Find patient rows (based on design matrix)
+        patient_rows = find(F(:,1) == ceil(jj / reps)); % Find patient rows (based on design matrix)
 
         % Randomly select a time point for dropout - either 2 or 3. Patient
         % must be observed at least once for this to make sense.
         dropout_time = 2; %randi([2, length(levels{2})]);
 
         % Introduce missingness starting from the dropout time point onward
-        for t = dropout_time:length(levels{2})
-            time_idx = find(F(:,2) == levels{2}(t)); % Find rows for the time point
+        for kk = dropout_time:length(levels{2})
+            time_idx = find(F(:,2) == levels{2}(kk)); % Find rows for the time point
             patient_time_rows = intersect(patient_rows, time_idx); % Get specific rows for the patient at this time point
 
-   
-            for q = 1:length(patient_time_rows)
+            for ll = 1:length(patient_time_rows)
                 if rand() <= missingness_levels(ii)/100
-                    X(patient_time_rows(q),:) = NaN;
+                    X(patient_time_rows(ll),:) = NaN;
                 end
             end
-
             
             % if num_missing_rows > 0
             %     missing_rows = randsample(patient_time_rows, num_missing_rows); % Random subset
@@ -161,7 +159,7 @@ sc2 = errorbar(mean_lvls,squeeze(mean_lin(1,:,2,1)),squeeze(std_lin(1,:,2,1)),'-
 sc3 = errorbar(mean_lvls,squeeze(mean_lin(1,:,3,1)),squeeze(std_lin(1,:,3,1)),'-o','Color',[colors(3,:),0.5]);
 hold off;
 
-subtitle('2 Factor Model - A (signficant)')
+subtitle('2 Factor Model - A (significant)')
 ylabel('ERROR');
 xlabel('% Missing Data');
 
@@ -172,7 +170,7 @@ sc2 = errorbar(mean_lvls,squeeze(mean_lin(1,:,2,2)),squeeze(std_lin(1,:,2,2)),'-
 sc3 = errorbar(mean_lvls,squeeze(mean_lin(1,:,3,2)),squeeze(std_lin(1,:,3,2)),'-o','Color',[colors(3,:),0.5]);
 hold off;
 
-subtitle('2 Factor Model - B (not signficant)')
+subtitle('2 Factor Model - B (not significant)')
 ylabel('ERROR');
 xlabel('% Missing Data');
 
@@ -187,7 +185,7 @@ sc2 = errorbar(mean_lvls,squeeze(mean_int(1,:,2,1)),squeeze(std_int(1,:,2,1)),'-
 sc3 = errorbar(mean_lvls,squeeze(mean_int(1,:,3,1)),squeeze(std_int(1,:,3,1)),'-o','Color',[colors(3,:),0.5]);
 hold off;
 
-subtitle('2 Factor Model - A (signficant)')
+subtitle('2 Factor Model - A (significant)')
 ylabel('ERROR');
 xlabel('% Missing Data');
 
@@ -198,7 +196,7 @@ sc2 = errorbar(mean_lvls,squeeze(mean_int(1,:,2,2)),squeeze(std_int(1,:,2,2)),'-
 sc3 = errorbar(mean_lvls,squeeze(mean_int(1,:,3,2)),squeeze(std_int(1,:,3,2)),'-o','Color',[colors(3,:),0.5]);
 hold off;
 
-subtitle('2 Factor Model - B (not signficant)')
+subtitle('2 Factor Model - B (not significant)')
 ylabel('ERROR');
 xlabel('% Missing Data');
 
@@ -209,7 +207,7 @@ sc2 = errorbar(mean_lvls,squeeze(mean_int(1,:,2,3)),squeeze(std_int(1,:,2,3)),'-
 sc3 = errorbar(mean_lvls,squeeze(mean_int(1,:,3,3)),squeeze(std_int(1,:,3,3)),'-o','Color',[colors(3,:),0.5]);
 hold off;
 
-subtitle('2 Factor Model - AB (not signficant)')
+subtitle('2 Factor Model - AB (not significant)')
 ylabel('ERROR');
 xlabel('% Missing Data');
 
