@@ -1,6 +1,6 @@
-# Supporting code for ''Considerations for missing data, outliers and transformations in permutation testing for ANOVA, ASCA(+) and related factorizations''
+# Supporting code for ''Considerations for missing data, outliers and transformations in permutation testing for ANOVA  with multivariate responses''
 
-*Oliver Polushkina Merchanskaya, Michael D. Sorochan Armstrong, Carolina GÃ³mez Llorente, Patricia Ferrer, Sergi Fernandez-Gonzalez, Miriam Perez-Cruz, MarÃ­a Dolores GÃ³mez-Roig, JosÃ© Camacho*
+*Oliver Polushkina Merchanskaya, Michael D. Sorochan Armstrong, Carolina Gómez Llorente, Patricia Ferrer, Sergi Fernandez-Gonzalez, Miriam Perez-Cruz, María Dolores Gómez-Roig, José Camacho*
 
 This repository requires the MEDA toolbox v1.3 at https://github.com/codaslab/MEDA-Toolbox
 
