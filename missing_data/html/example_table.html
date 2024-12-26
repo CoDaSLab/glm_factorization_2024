@@ -1,0 +1,308 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>example_table</title><meta name="generator" content="MATLAB 9.1"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2024-12-20"><meta name="DC.source" content="example_table.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h2>Contents</h2><div><ul><li><a href="#1">Example 1 of Considerations for missing data, outliers and</a></li><li><a href="#3">Create +5% missing elements and compute SS</a></li><li><a href="#4">Impute with UMR</a></li><li><a href="#5">Impute with CMR</a></li><li><a href="#6">Impute with TSR</a></li><li><a href="#7">Comparison of SS distribution</a></li></ul></div><h2 id="1">Example 1 of Considerations for missing data, outliers and</h2><p>transformations in permutation testing for ANOVA, ASCA and related factorizations, by Polushkina et al. Submitted to Chemolab Simulation with two factors, one significant, and no significant interaction. Missing data is artificially generated in the data and imputed with Unconditional Mean Replacement (UMR), Conditional Mean Replacement (CMR) and Trimmed Score Regression (TSR).</p><p>coded by: Jos&eacute; Camacho (<a href="mailto:josecamacho@ugr.es">josecamacho@ugr.es</a>) last modification: 09/Apr/24</p><p>Copyright (C) 2024  Universidad de Granada</p><p>This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.</p><p>This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.</p><p>You should have received a copy of the GNU General Public License along with this program.  If not, see <a href="http://www.gnu.org/licenses/">http://www.gnu.org/licenses/</a>.</p><pre class="codeinput"><span class="keyword">for</span> rep = 1:10
+</pre><pre class="codeinput">rep
+
+rng(rep);
+
+reps = 4;
+vars = 400;
+levels = {[1,2,3,4],[1,2,3]};
+
+F = create_design(levels,reps);
+
+X = zeros(size(F,1),vars);
+<span class="keyword">for</span> i = 1:length(levels{1})
+    X(find(F(:,1) == levels{1}(i)),:) = simuleMV(length(find(F(:,1) == levels{1}(i))),vars,8) + repmat(randn(1,vars),length(find(F(:,1) == levels{1}(i))),1);
+<span class="keyword">end</span>
+
+T = parglm(X, F, [], 0);
+</pre><pre class="codeoutput">rep =
+     1
+Starting parallel pool (parpool) using the 'local' profile ... connected to 8 workers.
+</pre><pre class="codeoutput">rep =
+     2
+</pre><pre class="codeoutput">rep =
+     3
+</pre><pre class="codeoutput">rep =
+     4
+</pre><pre class="codeoutput">rep =
+     5
+</pre><pre class="codeoutput">rep =
+     6
+</pre><pre class="codeoutput">rep =
+     7
+</pre><pre class="codeoutput">rep =
+     8
+</pre><pre class="codeoutput">rep =
+     9
+</pre><pre class="codeoutput">rep =
+    10
+</pre><h2 id="3">Create +5% missing elements and compute SS</h2><pre class="codeinput">A = randn(size(X));
+[~,ind] = sort(A(:));
+
+Xmis = X;
+Xmis(ind(1:1000)) = nan;
+
+m = nanmean(Xmis);
+
+u1 = unique(F(:,1));
+<span class="keyword">for</span> f1 = 1:length(u1)
+    ind = find(F(:,1)==u1(f1));
+    mf1(f1,:) = nanmean(Xmis(ind,:)) - m;
+    nf1(f1,:) = sum(~isnan(Xmis(ind,:)));
+<span class="keyword">end</span>
+SSf1 = sum(sum(nf1.*(mf1.^2)));
+
+u2 = unique(F(:,2));
+<span class="keyword">for</span> f2 = 1:length(u2)
+    ind = find(F(:,2)==u2(f2));
+    mf2(f2,:) = nanmean(Xmis(ind,:)) - m;
+    nf2(f2,:) = sum(~isnan(Xmis(ind,:)));
+<span class="keyword">end</span>
+SSf2 = sum(sum(nf2.*(mf2.^2)));
+
+Xmisc = Xmis;
+SStotal = sum(Xmisc(~isnan(Xmisc(:))).^2);
+SSerr = SStotal - SSf1 - SSf2;
+
+Tmiss = [SSf1 SSf2 SSerr SStotal]';
+</pre><h2 id="4">Impute with UMR</h2><pre class="codeinput">[row,col] = find(isnan(Xmis));
+
+Xumr = Xmis;
+cv = unique(col);
+<span class="keyword">for</span> c = 1:length(cv)
+    ind = find(col==cv(c));
+    Xumr(row(ind),cv(c)) = nanmean(Xmis(:,cv(c)));
+<span class="keyword">end</span>
+
+Tumr = parglm(Xumr, F, [], 0);
+</pre><h2 id="5">Impute with CMR</h2><pre class="codeinput">[row,col] = find(isnan(Xmis));
+
+Xcmr = Xmis;
+fv = unique(F,<span class="string">'rows'</span>);
+cv = unique(col);
+<span class="keyword">for</span> c = 1:length(cv)
+    <span class="keyword">for</span> f = 1:length(fv)
+        indf = ismember(fv(f,:),F,<span class="string">'rows'</span>);
+        indc = find(col(indf)==cv(c));
+        Xcmr(row(indf(indc)),cv(c)) = nanmean(Xmis(indf,cv(c)));
+    <span class="keyword">end</span>
+<span class="keyword">end</span>
+
+Tcmr = parglm(Xcmr, F, [], 0);
+</pre><h2 id="6">Impute with TSR</h2><pre class="codeinput">[row,col] = find(isnan(Xmis));
+
+Xtsr = missTSR2D(Xmis,1:3,0);
+
+Ttsr = parglm(Xtsr, F, [], 0);
+</pre><h2 id="7">Comparison of SS distribution</h2><pre class="codeinput">Trep(:,:,rep) = [T{2:end,2},Tmiss,Tumr{2:end,2},Tcmr{2:end,2},Ttsr{2:end,2}];
+</pre><pre class="codeinput"><span class="keyword">end</span>
+
+Ttot = array2table(mean(Trep,3),<span class="string">'RowNames'</span>, T{2:end,1},<span class="string">'VariableNames'</span>, {<span class="string">'Original'</span>,<span class="string">'Missing'</span>,<span class="string">'UMR'</span>,<span class="string">'CMR'</span>,<span class="string">'TSR'</span>})
+</pre><pre class="codeoutput">Ttot = 
+                 Original    Missing     UMR       CMR       TSR  
+                 ________    _______    ______    ______    ______
+    Factor 1      14749       13964      13260     14756     13723
+    Factor 2     62.977       98.39     91.779    68.536    90.701
+    Residuals      6226      5883.2     6852.1    6154.5    6420.8
+    Total         21038       19946      20204     20979     20234
+</pre><p class="footer"><br><a href="http://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2016b</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Example 1 of Considerations for missing data, outliers and 
+% transformations in permutation testing for ANOVA, ASCA and related 
+% factorizations, by Polushkina et al. Submitted to Chemolab
+% Simulation with two factors, one significant, and no significant 
+% interaction. Missing data is artificially generated in the data and
+% imputed with Unconditional Mean Replacement (UMR), Conditional Mean 
+% Replacement (CMR) and Trimmed Score Regression (TSR). 
+%
+% coded by: José Camacho (josecamacho@ugr.es)
+% last modification: 09/Apr/24
+%
+% Copyright (C) 2024  Universidad de Granada
+%
+% This program is free software: you can redistribute it and/or modify
+% it under the terms of the GNU General Public License as published by
+% the Free Software Foundation, either version 3 of the License, or
+% (at your option) any later version.
+%
+% This program is distributed in the hope that it will be useful,
+% but WITHOUT ANY WARRANTY; without even the implied warranty of
+% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+% GNU General Public License for more details.
+%
+% You should have received a copy of the GNU General Public License
+% along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+
+for rep = 1:10
+    
+rep
+    
+rng(rep);
+
+reps = 4;
+vars = 400;
+levels = {[1,2,3,4],[1,2,3]};
+
+F = create_design(levels,reps);
+
+X = zeros(size(F,1),vars);
+for i = 1:length(levels{1})
+    X(find(F(:,1) == levels{1}(i)),:) = simuleMV(length(find(F(:,1) == levels{1}(i))),vars,8) + repmat(randn(1,vars),length(find(F(:,1) == levels{1}(i))),1);
+end
+
+T = parglm(X, F, [], 0);
+
+
+%% Create +5% missing elements and compute SS
+
+A = randn(size(X));
+[~,ind] = sort(A(:));
+
+Xmis = X;
+Xmis(ind(1:1000)) = nan;
+
+m = nanmean(Xmis);
+
+u1 = unique(F(:,1));
+for f1 = 1:length(u1)
+    ind = find(F(:,1)==u1(f1));
+    mf1(f1,:) = nanmean(Xmis(ind,:)) - m;
+    nf1(f1,:) = sum(~isnan(Xmis(ind,:)));  
+end     
+SSf1 = sum(sum(nf1.*(mf1.^2)));
+
+u2 = unique(F(:,2));
+for f2 = 1:length(u2)
+    ind = find(F(:,2)==u2(f2));
+    mf2(f2,:) = nanmean(Xmis(ind,:)) - m;
+    nf2(f2,:) = sum(~isnan(Xmis(ind,:))); 
+end     
+SSf2 = sum(sum(nf2.*(mf2.^2)));
+
+Xmisc = Xmis;
+SStotal = sum(Xmisc(~isnan(Xmisc(:))).^2);
+SSerr = SStotal - SSf1 - SSf2;
+
+Tmiss = [SSf1 SSf2 SSerr SStotal]';
+
+%% Impute with UMR
+
+[row,col] = find(isnan(Xmis));
+
+Xumr = Xmis;
+cv = unique(col);
+for c = 1:length(cv)
+    ind = find(col==cv(c));
+    Xumr(row(ind),cv(c)) = nanmean(Xmis(:,cv(c)));
+end
+
+Tumr = parglm(Xumr, F, [], 0);
+
+
+%% Impute with CMR
+
+[row,col] = find(isnan(Xmis));
+
+Xcmr = Xmis;
+fv = unique(F,'rows');
+cv = unique(col);
+for c = 1:length(cv)
+    for f = 1:length(fv)
+        indf = ismember(fv(f,:),F,'rows'); 
+        indc = find(col(indf)==cv(c));
+        Xcmr(row(indf(indc)),cv(c)) = nanmean(Xmis(indf,cv(c)));
+    end
+end
+
+Tcmr = parglm(Xcmr, F, [], 0);
+
+
+%% Impute with TSR
+
+[row,col] = find(isnan(Xmis));
+
+Xtsr = missTSR2D(Xmis,1:3,0);
+
+Ttsr = parglm(Xtsr, F, [], 0);
+
+
+%% Comparison of SS distribution
+
+Trep(:,:,rep) = [T{2:end,2},Tmiss,Tumr{2:end,2},Tcmr{2:end,2},Ttsr{2:end,2}];
+
+end
+
+Ttot = array2table(mean(Trep,3),'RowNames', T{2:end,1},'VariableNames', {'Original','Missing','UMR','CMR','TSR'})
+
+
+##### SOURCE END #####
+--></body></html>

@@ -1,7 +1,7 @@
 %% Simulation of missing data relative to a General Linear Model
 %
 % This script utilises a method for simulating data with significant terms
-% as per Camacho et al. Camacho, JosÃ©,
+% as per Camacho, José,
 % et al. 'Least-squares approximation of a space distribution for a given
 % covariance and latent sub-space.' Chemometrics and Intelligent Laboratory
 % Systems 105.2 (2011): 171-180.
@@ -19,7 +19,7 @@
 % to the true p values is measured in this script.
 %
 % coded by: Michael Sorochan Armstrong (mdarmstr@go.ugr.es) with input from
-% JosÃ© Camacho
+% José Camacho
 % last modification: 17-04-2023
 %
 % Copyright (C) 2023  Universidad de Granada
@@ -45,7 +45,7 @@ reps = 4;
 vars = 400;
 levels = {[1,2,3,4],[1,2,3]};
 R = 10;
-lvls = [0,1,5,10,15,20];
+lvls = [1, 5, 10, 15, 20];
 labels = {'UMR','CMR','pCMR'};
 
 F = create_design(levels,reps);
@@ -64,13 +64,14 @@ num_entries = numel(X);
 
 
 %% ITERATIVELY REMOVE ZEROS, CALCULATE P VALUES
-
+results_lin = zeros(R,length(lvls),3,2);
+results_int = zeros(R,length(lvls),3,3);
 for ii = 1:length(lvls)
 
     for jj = 1:R
 
         X2 = X;
-        rng();
+        rng(jj);
         idx = randperm(numel(X),round(numel(X)*lvls(ii)/100));
         X2(idx) = nan;
 
@@ -90,7 +91,7 @@ for ii = 1:length(lvls)
         results_int(jj,ii,2,:) = (parglmo_cell_int.p - parglmo_int.p)./parglmo_int.p; 
         results_int(jj,ii,3,:) = (parglmo_cell2_int.p - parglmo_int.p)./parglmo_int.p; 
 
-        lvls_actual(jj,ii) = (sum(isnan(X2),'all')/num_entries)*100;
+        lvls_actual(jj,ii) = (sum(isnan(X2(:)))/num_entries)*100;
 
         fprintf('Replicate %d of %d complete \n',jj, R)
     end
@@ -99,7 +100,10 @@ for ii = 1:length(lvls)
 
 end
 
+save results_mcar_rand
+
 %% Calculate mean and standard deviation for error bars
+
 mean_lin = mean(results_lin, 1); % Mean across replicates
 std_lin = std(results_lin, [], 1); % Standard deviation across replicates
 mean_lvls = mean(lvls_actual, 1); % Average missingness levels across replicates - little variantion
@@ -111,9 +115,9 @@ sc2 = errorbar(mean_lvls,squeeze(mean_lin(1,:,2,1)),squeeze(std_lin(1,:,2,1)),'-
 sc3 = errorbar(mean_lvls,squeeze(mean_lin(1,:,3,1)),squeeze(std_lin(1,:,3,1)),'-o','Color',[colors(3,:),0.5]);
 hold off;
 
-subtitle('2 Factor Model - A (significant)')
-ylabel('ERROR');
-xlabel('% Missing Data');
+title('A (significant)','FontSize', 10)
+ylabel('ERROR','FontSize', 10);
+xlabel('% Missing Data','FontSize', 10);
 
 subplot(3,2,3)
 hold on;
@@ -122,9 +126,9 @@ sc2 = errorbar(mean_lvls,squeeze(mean_lin(1,:,2,2)),squeeze(std_lin(1,:,2,2)),'-
 sc3 = errorbar(mean_lvls,squeeze(mean_lin(1,:,3,2)),squeeze(std_lin(1,:,3,2)),'-o','Color',[colors(3,:),0.5]);
 hold off;
 
-subtitle('2 Factor Model - B (not significant)')
-ylabel('ERROR');
-xlabel('% Missing Data');
+title('B (not significant)','FontSize', 10)
+ylabel('ERROR','FontSize', 10);
+xlabel('% Missing Data','FontSize', 10);
 
 mean_int = mean(results_int, 1); % Mean across replicates
 std_int = std(results_int, [], 1); % Standard deviation across replicates
@@ -137,9 +141,9 @@ sc2 = errorbar(mean_lvls,squeeze(mean_int(1,:,2,1)),squeeze(std_int(1,:,2,1)),'-
 sc3 = errorbar(mean_lvls,squeeze(mean_int(1,:,3,1)),squeeze(std_int(1,:,3,1)),'-o','Color',[colors(3,:),0.5]);
 hold off;
 
-subtitle('2 Factor Model - A (significant)')
-ylabel('ERROR');
-xlabel('% Missing Data');
+title('A (significant)','FontSize', 10)
+ylabel('ERROR','FontSize', 10);
+xlabel('% Missing Data','FontSize', 10);
 
 subplot(3,2,4)
 hold on;
@@ -148,9 +152,9 @@ sc2 = errorbar(mean_lvls,squeeze(mean_int(1,:,2,2)),squeeze(std_int(1,:,2,2)),'-
 sc3 = errorbar(mean_lvls,squeeze(mean_int(1,:,3,2)),squeeze(std_int(1,:,3,2)),'-o','Color',[colors(3,:),0.5]);
 hold off;
 
-subtitle('2 Factor Model - B (not significant)')
-ylabel('ERROR');
-xlabel('% Missing Data');
+title('B (not significant)','FontSize', 10)
+ylabel('ERROR','FontSize', 10);
+xlabel('% Missing Data','FontSize', 10);
 
 subplot(3,2,6)
 hold on;
@@ -159,11 +163,11 @@ sc2 = errorbar(mean_lvls,squeeze(mean_int(1,:,2,3)),squeeze(std_int(1,:,2,3)),'-
 sc3 = errorbar(mean_lvls,squeeze(mean_int(1,:,3,3)),squeeze(std_int(1,:,3,3)),'-o','Color',[colors(3,:),0.5]);
 hold off;
 
-subtitle('2 Factor Model - AB (not significant)')
-ylabel('ERROR');
-xlabel('% Missing Data');
+title('AB (not significant)','FontSize', 10)
+ylabel('ERROR','FontSize', 10);
+xlabel('% Missing Data','FontSize', 10);
 
-sgtitle('Imputation Methods, MCAR Missingness', 'FontSize', 14);
+%sgtitle('Imputation Methods, haphazard MCAR Missingness', 'FontSize', 14);
 
 h = [sc1(1);sc2(1);sc3(1)]; 
 lgd = legend(h,labels);

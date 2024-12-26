@@ -2,7 +2,8 @@ function [T, parglmo] = parglm(X, F, interactions, prep, n_perm, ts, ordinal, fm
 
 % Parallel General Linear Model to obtain multivariate factor and interaction 
 % matrices in a crossed experimental design and permutation test for multivariate 
-% statistical significance. Missing data is considered.
+% statistical significance. Missing data is considered with permutational 
+% Conditional Mean Replacement, permutations of raw observations.
 %
 % Related routines: asca, apca, parglmVS, parglmMC, create_design
 %

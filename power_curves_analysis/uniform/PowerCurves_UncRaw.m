@@ -35,8 +35,8 @@ clc
 tic
 
 % Import your own F matrix
-load ../blood_hemo_vasca 
-% load ../biomark_vasca 
+% load ../blood_hemo_vasca 
+ load ../biomark_vasca 
 % load ../bacteria_vasca  
 
 obs_l = 1:size(F);
@@ -83,7 +83,7 @@ for i2=1:perm_tot
         Xm = alpha(a)*Xstruct + (1-alpha(a))*Xnoise; 
         
         % raw data perm
-        [T, paranovao] = parglm(Xm,F,[1 2],0,[],0);
+        [T, paranovao] = parglm(Xm,F,[1 2],1,[],0);
         reo = [4 2 1 3];
         for o = 1:length(reo)
             if paranovao.p(reo(o))<0.05
@@ -92,7 +92,7 @@ for i2=1:perm_tot
         end
 
         % raw data perm F
-        [T, paranovao] = parglm(Xm,F,[1 2],0,[],1);
+        [T, paranovao] = parglm(Xm,F,[1 2],1,[],1);
         reo = [4 2 1 3];
         for o = 1:length(reo)
             if paranovao.p(reo(o))<0.05
@@ -113,7 +113,7 @@ for i2=1:perm_tot
         Xm2 = Xm;
         Xm2 = Xm2 - min(min(Xm)) + 0.01;
         for i=1:size(Xm,2), Xm2(:,i) = boxcox(Xm2(:,i)); end
-        [T, paranovao] = parglm(Xm2,F,[1 2],0,[],1);
+        [T, paranovao] = parglm(Xm2,F,[1 2],1,[],1);
         reo = [4 2 1 3];
         for o = 1:length(reo)
             if paranovao.p(reo(o))<0.05
@@ -122,7 +122,7 @@ for i2=1:perm_tot
         end
         
         % raw data perm F after rank transform
-        [T, paranovao] = parglm(rank_transform(Xm),F,[1 2],0,[],1);
+        [T, paranovao] = parglm(rank_transform(Xm),F,[1 2],1,[],1);
         reo = [4 2 1 3];
         for o = 1:length(reo)
             if paranovao.p(reo(o))<0.05
@@ -132,7 +132,7 @@ for i2=1:perm_tot
         
         % Combine 2 and 5
         Xr =  rank_transform(Xm);
-        [T, paranovao] = parglm([Xm/norm(Xm) Xr/norm(Xr)],F,[1 2],0,[],1);
+        [T, paranovao] = parglm([Xm/norm(Xm) Xr/norm(Xr)],F,[1 2],1,[],1);
         reo = [4 2 1 3];
         for o = 1:length(reo)
             if paranovao.p(reo(o))<0.05
@@ -147,9 +147,7 @@ toc
 
 e = mean(eD,4);
 eST = std(eD,0,4);
-save random_e1 e eST eD alpha
-%save random_e2 e eST eD alpha
-%save random_e3 e eST eD alpha
+save random_e e eST eD alpha
 
 %% Compare Interaction
 
